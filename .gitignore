@@ -1,0 +1,11 @@
+##node recommended ignores
+node_modules
+build
+.env
+
+##macOS ignores
+.DS_Store
+
+#idea ignores
+.idea
+

@@ -1,9 +1,9 @@
-##node recommended ignores
+#node ignores
 node_modules
 build
 .env
 
-##macOS ignores
+#macOS ignores
 .DS_Store
 
 #idea ignores

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "rimraf ./build && tsc",
-    "start": "npm run build && node --loader ts-node/esm --no-warnings build/index.js",
+    "start": "npm run build && NODE_ENV=production && node --loader ts-node/esm  --no-warnings build/index.js",
     "start:dev": "nodemon --exec ts-node --esm src/index.ts",
     "lint": "eslint --ext .ts src",
     "lint:fix": "eslint --ext .ts src --fix"
@@ -17,7 +17,6 @@
   "devDependencies": {
     "@types/node": "^18.11.18",
     "@types/node-telegram-bot-api": "^0.57.6",
-    "@types/webtorrent": "^0.109.3",
     "@typescript-eslint/eslint-plugin": "^5.50.0",
     "@typescript-eslint/parser": "^5.50.0",
     "eslint": "^8.33.0",
@@ -38,6 +37,7 @@
     "dotenv": "^16.0.3",
     "node-telegram-bot-api": "^0.61.0",
     "puppeteer": "^19.6.3",
+    "snowflake-uuid": "^1.0.0",
     "webtorrent": "^2.0.11"
   }
 }

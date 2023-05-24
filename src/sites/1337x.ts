@@ -10,4 +10,5 @@ export default {
   },
   magnet_selector: `a[href^="magnet:?xt=urn:btih:"]`,
   category_selector: ".torrent-detail-page ul.list:nth-child(2) span",
+  allowed_categories: ["movies", "tv", "anime", "xxx"],
 } as siteConfig;

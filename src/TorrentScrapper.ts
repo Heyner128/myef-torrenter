@@ -24,6 +24,7 @@ export type siteConfig = {
   list_selectors: torrentSelectors;
   magnet_selector: string;
   category_selector: string;
+  allowed_categories: string[];
 };
 
 const generator = new Worker(0, 1, {
@@ -62,7 +63,7 @@ export default class TorrentScrapper {
     this.browser = await puppeteer.launch();
   }
 
-  async search(search: string): Promise<Promise<torrentInfo>[]> {
+  async search(search: string): Promise<Promise<torrentInfo | undefined>[]> {
     const page = await this.browser?.newPage();
     await page?.goto(encodeURI(this.site.search_url.replace("%s", search)));
     const titles = await page?.$$eval(this.site.list_selectors.titles_selector, (el) =>
@@ -83,16 +84,18 @@ export default class TorrentScrapper {
     if (titles && seeds && leeches && sizes && links) {
       return titles.slice(0, Number(process.env.SEARCH_LIMIT) ?? 3).map(async (_el: any, index: number) => {
         const { magnet, category } = await this.getAdditionalInformation(links[index]);
-        return {
-          id: generator.nextId().toString(),
-          title: titles[index],
-          seeds: Number(seeds[index]),
-          leeches: Number(leeches[index]),
-          size_kbs: sizeParser(sizes[index]),
-          link: links[index],
-          magnet,
-          category,
-        };
+        if (category && this.site.allowed_categories.includes(category.toLowerCase())) {
+          return {
+            id: generator.nextId().toString(),
+            title: titles[index],
+            seeds: Number(seeds[index]),
+            leeches: Number(leeches[index]),
+            size_kbs: sizeParser(sizes[index]),
+            link: links[index],
+            magnet,
+            category,
+          };
+        }
       });
     }
     throw new Error("No results found");

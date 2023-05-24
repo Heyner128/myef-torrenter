@@ -1,36 +1,33 @@
 import TelegramBot, { SendMessageOptions } from "node-telegram-bot-api";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import TorrentClient from "webtorrent";
+import * as fs from "fs";
 import TorrentScrapper, { torrentInfo } from "./TorrentScrapper";
 import config1337x from "./sites/1337x";
+import TorrentController, { webtorrentDownload } from "./TorrentController";
 
-type torrentOptions = {
+type messageWithOptions = {
   message: string;
-  options?: torrentInfo[];
+  options?: SendMessageOptions;
 };
 
-function torrentsToOptions(torrents: torrentInfo[]): SendMessageOptions {
+function stringsToTelegramOptions(strings: string[]): SendMessageOptions {
   return {
     reply_markup: {
-      inline_keyboard: [torrents.map((torrent, index) => ({ text: String(index + 1), callback_data: torrent.id }))],
+      inline_keyboard: [strings.map((str, index) => ({ text: String(index + 1), callback_data: str }))],
     },
   };
 }
 
 function cleanTorrentTitle(title: string): string {
   const withoutPeriods = title.replace(/\./g, " ");
-  const truncated = withoutPeriods.length > 50 ? `${withoutPeriods.substring(0, 50)}...` : withoutPeriods;
-  return truncated;
+  return withoutPeriods.length > 50 ? `${withoutPeriods.substring(0, 50)}...` : withoutPeriods;
 }
 
 export default class TorrentBot {
-  private bot: TelegramBot = new TelegramBot(process.env.BOT_TOKEN ?? "", { polling: true });
-
-  private torrentClient: TorrentClient = new TorrentClient({
-    downloadLimit: Number(process.env.DOWNLOAD_SPEED_LIMIT_KBS) ?? 1 * 1000,
-    uploadLimit: Number(process.env.UPLOAD_SPEED_LIMIT_KBS) ?? 0.1 * 1000,
-    path: process.env.DOWNLOAD_PATH ?? "./downloads",
+  private bot: TelegramBot = new TelegramBot(process.env.BOT_TOKEN ?? "", {
+    polling: true,
+    baseApiUrl: process.env.BOT_API_URL,
   });
 
   private scrapper1337x = new TorrentScrapper(config1337x);
@@ -39,17 +36,31 @@ export default class TorrentBot {
 
   private searchHistory: torrentInfo[] = [];
 
+  private informationMessages: NodeJS.Timer[] = [];
+
+  private torrentController = new TorrentController();
+
   constructor() {
     this.setOnMessageAction("(.+)", "");
-    this.setOnButtonAction("juliozorra piratea (.+)", "Buscando...", this.searchTorrent.bind(this));
+    this.setOnButtonAction("juliozorra piratea (.+)", this.searchTorrent.bind(this), "Buscando...");
+    this.setOnButtonAction("juliozorra mué?e?strame las descargas", this.getDownloadsList.bind(this));
+    this.bot.on("my_chat_member", this.onBotMembershipUpdate.bind(this));
+    this.onButtonSelection(async (chatId, torrentId) => {
+      if (this.searchHistory.find((torrent) => torrent.id === torrentId)) {
+        await this.searchButtonHandler(chatId, torrentId);
+      }
+      if (this.torrentController.getTorrent(torrentId)) {
+        await this.downloadInfoButtonHandler(chatId, torrentId);
+      }
+    });
     console.log("Bot started");
   }
 
-  setOnMessageAction(
+  private setOnMessageAction(
     pattern: string,
     response: ((match: RegExpExecArray | null) => Promise<string>) | string,
     preResponse?: string,
-    options?: ((match: RegExpExecArray | null) => Promise<SendMessageOptions>) | SendMessageOptions,
+    options?: ((match: RegExpExecArray | null) => Promise<SendMessageOptions | undefined>) | SendMessageOptions,
     repeatInterval?: number
   ) {
     this.bot.onText(new RegExp(pattern, "i"), async (msg, match) => {
@@ -86,31 +97,32 @@ export default class TorrentBot {
     });
   }
 
-  setOnButtonAction(
+  private setOnButtonAction(
     pattern: string,
-    preResponse: string,
-    firstResponse: ((match: RegExpExecArray | null) => Promise<torrentOptions>) | torrentOptions
+    finalResponse: ((match: RegExpExecArray | null) => Promise<messageWithOptions>) | messageWithOptions,
+    preResponse?: string
   ) {
-    const options: ((match: RegExpExecArray | null) => Promise<SendMessageOptions>) | SendMessageOptions = async (
-      match
-    ) => {
-      const opts: SendMessageOptions =
-        typeof firstResponse === "function"
-          ? await firstResponse(match).then((val) => torrentsToOptions(val.options ?? []))
-          : torrentsToOptions(firstResponse.options ?? []);
+    const options:
+      | ((match: RegExpExecArray | null) => Promise<SendMessageOptions | undefined>)
+      | SendMessageOptions
+      | undefined = async (match) => {
+      const opts: SendMessageOptions | undefined =
+        typeof finalResponse === "function"
+          ? await finalResponse(match).then((val) => val.options)
+          : finalResponse.options;
       return opts;
     };
     const Response: ((match: RegExpExecArray | null) => Promise<string>) | string = async (match) => {
       const msg: string =
-        typeof firstResponse === "function"
-          ? await firstResponse(match).then((val) => val.message)
-          : firstResponse.message;
+        typeof finalResponse === "function"
+          ? await finalResponse(match).then((val) => val.message)
+          : finalResponse.message;
       return msg;
     };
     this.setOnMessageAction(pattern, Response, preResponse, options);
   }
 
-  onButtonSelection(action: (chatId: number, torrentId: string) => void) {
+  private onButtonSelection(action: (chatId: number, data: string) => void) {
     this.bot.on("callback_query", async (callbackQuery) => {
       const { data, message } = callbackQuery;
       if (data && message) {
@@ -119,28 +131,119 @@ export default class TorrentBot {
     });
   }
 
-  private async searchTorrent(match: RegExpExecArray | null): Promise<torrentOptions> {
+  private async searchTorrent(match: RegExpExecArray | null): Promise<messageWithOptions> {
     await this.scrapper1337x.init();
     const torrents = await Promise.all(await this.scrapper1337x.search(match?.[1] ?? ""));
     await this.scrapper1337x.close();
-    if (torrents.length === 0) return { message: "No se encontraron resultados" };
-    torrents.forEach((torr) => this.searchHistory.push(torr));
+    if (torrents.length === 0 || torrents.some((torr) => torr === undefined))
+      return { message: "No se encontraron resultados o los resultados estan en categorias prohibidas" };
+    torrents.forEach((torr) => {
+      if (this.searchHistory.length > Number(process.env.MAX_SEARCH_HISTORY_SIZE)) this.searchHistory.shift();
+      if (torr) this.searchHistory.push(torr);
+    });
     return {
-      message: `Selecciona el torrent que quieras descargar: ${torrents.map(
-        (torr, index) => `\n\n${index + 1} - ${cleanTorrentTitle(torr.title)}`
+      message: `Selecciona el archivo que quieras descargar: ${torrents.map(
+        (torr, index) => `\n\n${index + 1} - ${cleanTorrentTitle(torr ? torr.title : "")}`
       )}`,
-      options: torrents,
+      options: stringsToTelegramOptions(torrents.map((torr) => (torr ? torr.id : ""))),
     };
   }
 
-  private downloadTorrent(torrentId: string): void {
-    const torrent = this.searchHistory.find((torr) => torr.id === torrentId);
-    if (!torrent?.magnet) throw new Error("El enlace al torrent no es valido");
-    if (this.torrentClient.torrents.length === Number(process.env.MAX_QUEUE_SIZE))
-      throw new Error("La cola de descargas esta llena");
-    if (torrent.size_kbs > Number(process.env.MAX_TORRENT_SIZE_KBS)) throw new Error("El archivo es muy grande");
-    if (torrent.seeds / torrent.leeches < Number(process.env.MIN_SEEDS_RATIO))
-      throw new Error("La descarga no tiene suficiente calidad");
-    this.torrentClient.add(torrent.magnet);
+  private async getDownloadsList(): Promise<messageWithOptions> {
+    const downloads = this.torrentController.torrentList;
+    if (downloads.length === 0) return { message: "No hay descargas en curso" };
+    return {
+      message: `Selecciona la descarga para ver la informacion: ${downloads.map(
+        (download: webtorrentDownload) => `\n\n${download.name}`
+      )}`,
+      options: stringsToTelegramOptions(downloads.map((download: webtorrentDownload) => download.infoHash)),
+    };
+  }
+
+  private async getDownloadInfo(infoHash: string): Promise<string> {
+    const download = this.torrentController.getTorrent(infoHash);
+    if (!download) throw new Error("No se encontro la descarga");
+    return `Nombre: ${download.name}\nTamaño: ${download.length}\nDescargado: ${download.downloaded}\nVelocidad: ${
+      download.downloadSpeed
+    }\nEstado: ${download.done ? "Finalizado" : "En progreso"}
+    `;
+  }
+
+  private async searchButtonHandler(chatId: number, torrentId: string) {
+    try {
+      const torrentInformations = this.searchHistory.find((torr) => torr?.id === torrentId);
+      if (!torrentInformations) throw new Error("No se encontro el torrent");
+      const torrent = await this.torrentController.downloadTorrent(torrentInformations);
+      await this.bot.sendMessage(
+        chatId,
+        `Descargando ${torrent.name} \n\n Envia 'juliozorra muestrame las descargas' para ver las descargas en curso`
+      );
+      await this.torrentController.downloadWatcher(
+        chatId,
+        torrent.magnetURI,
+        (sourceChatId: number, download: webtorrentDownload) => {
+          this.sendVideo(sourceChatId, download);
+        }
+      );
+      console.log("Torrent download started");
+    } catch (e) {
+      await this.bot.sendMessage(chatId, `${e}`);
+      console.log(`Download error: ${e}`);
+    }
+  }
+
+  private async downloadInfoButtonHandler(chatId: number, infoHash: string) {
+    try {
+      let downloadInfo = await this.getDownloadInfo(infoHash);
+      const messageSent = await this.bot.sendMessage(chatId, downloadInfo);
+      const intervalId = setInterval(async () => {
+        const download = this.torrentController.getTorrent(infoHash);
+        const currentDownloadInfo = await this.getDownloadInfo(infoHash);
+        if (!download) {
+          clearInterval(intervalId);
+          this.informationMessages = this.informationMessages.filter((i) => i !== intervalId);
+          return;
+        }
+        if (
+          downloadInfo === currentDownloadInfo ||
+          this.informationMessages.length > Number(process.env.MAX_DOWNLOAD_INFORMATION_MESSAGES ?? 5)
+        )
+          return;
+        await this.bot.editMessageText(await this.getDownloadInfo(infoHash), {
+          chat_id: messageSent.chat.id,
+          message_id: messageSent.message_id,
+        });
+        downloadInfo = currentDownloadInfo;
+      }, 20000);
+      this.informationMessages.push(intervalId);
+      console.log("Download info sent");
+    } catch (e) {
+      await this.bot.sendMessage(chatId, `${e}`);
+      console.log(`Download info error sent: ${e}`);
+    }
+  }
+
+  private sendVideo(chatId: number, torrent: webtorrentDownload) {
+    torrent.files.forEach(async (file) => {
+      if (file.name.endsWith(".mp4") || file.name.endsWith(".mkv") || file.name.endsWith(".avi")) {
+        const buffer = fs.readFileSync(`${process.env.DOWNLOAD_PATH}/${file.path}`);
+        await this.bot.sendChatAction(chatId, "upload_video");
+        await this.bot.sendVideo(chatId, buffer);
+      }
+    });
+  }
+
+  private async onBotMembershipUpdate(chatMemberUpdate: TelegramBot.ChatMemberUpdated) {
+    const newStatus = chatMemberUpdate.new_chat_member.status;
+    if (newStatus === "member") {
+      const message = `Hola, para buscar un torrent envia 'juliozorra piratea' y el nombre de la busqueda, motores disponibles: 1337x`;
+      const interval = Number(process.env?.WELCOME_MESSAGE_INTERVAL_MINS);
+      // first time
+      await this.bot.sendMessage(chatMemberUpdate.chat.id, message);
+      // interval
+      setInterval(async () => {
+        await this.bot.sendMessage(chatMemberUpdate.chat.id, message);
+      }, (!Number.isNaN(interval) ? interval : 60) * 60 * 1000);
+    }
   }
 }

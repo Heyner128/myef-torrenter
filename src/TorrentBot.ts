@@ -260,7 +260,7 @@ export default class TorrentBot {
         const buffer = await fs.readFile(`${this?.options?.download_path ?? "./downloads"}/${file.path}`);
         await this.bot.sendVideo(chatId, buffer, {
           caption: file.name.endsWith(".mkv")
-            ? "Alerta: los archivos mkv no son compatibles con la vista previa de telegram, para verlo tienes que reproducirlo en otr apicación"
+            ? "Alerta: los archivos mkv no son compatibles con la vista previa de telegram, para verlo tienes que reproducirlo en otra apicación"
             : undefined,
         });
       }

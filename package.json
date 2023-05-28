@@ -39,6 +39,7 @@
     "node-telegram-bot-api": "^0.61.0",
     "path": "^0.12.7",
     "puppeteer": "^20.4.0",
+    "puppeteer-core": "^20.4.0",
     "rimraf": "^5.0.1",
     "snowflake-uuid": "^1.0.0",
     "typescript": "^5.0.4",

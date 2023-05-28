@@ -7,12 +7,12 @@ const logger = winston.createLogger({
   exitOnError: false,
   transports: [
     new winston.transports.File({
-      filename: "logs/error.log",
+      filename: "./logs/error.log",
       level: "error",
       handleExceptions: true,
     }),
     new winston.transports.File({
-      filename: "logs/combined.log",
+      filename: "./logs/combined.log",
       handleExceptions: true,
     }),
     new winston.transports.Console({

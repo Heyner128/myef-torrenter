@@ -44,15 +44,17 @@ type Download = {
 
 export default class TorrentController {
   constructor(private options?: TorrentControllerOptions) {
+    this.torrentClient = new TorrentClient({
+      downloadLimit: (this?.options?.download_speed_limit_kbs ?? 700) * 1024,
+      uploadLimit: (this?.options?.upload_speed_limit_kbs ?? 50) * 1024,
+    });
+
     this.torrentClient.on("error", (err: Error) => {
       logger.error(err);
     });
   }
 
-  private torrentClient: TorrentClient = new TorrentClient({
-    downloadLimit: (this?.options?.download_speed_limit_kbs ?? 62500) * 1024,
-    uploadLimit: (this?.options?.upload_speed_limit_kbs ?? 50) * 1024,
-  });
+  private torrentClient: TorrentClient;
 
   private downloadQueue: Download[] = [];
 

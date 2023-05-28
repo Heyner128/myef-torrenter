@@ -1,6 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
 import type { Message, SendMessageOptions, Update } from "node-telegram-bot-api";
-import * as fs from "fs/promises";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import logger from "./logger.js";
 import TorrentScrapper from "./TorrentScrapper.js";
@@ -40,35 +39,41 @@ function cleanTorrentTitle(title: string): string {
 }
 
 export default class TorrentBot {
-  private bot: TelegramBot = new TelegramBot(process.env.BOT_TOKEN ?? "", {
-    baseApiUrl: process.env.BOT_API_URL,
-  });
+  private bot: TelegramBot;
 
-  private scrappers: TorrentScrapper[] = [
-    new TorrentScrapper("1337x", config1337x, {
-      search_limit: this?.options?.search_limit,
-    }),
-  ];
+  private scrappers: TorrentScrapper[];
 
   private searchHistory: TorrentInfo[] = [];
 
   private informationMessages: NodeJS.Timer[] = [];
 
-  private torrentController = new TorrentController({
-    download_speed_limit_kbs: this?.options?.download_speed_limit_kbs,
-    upload_speed_limit_kbs: this?.options?.upload_speed_limit_kbs,
-    max_queue_size: this?.options?.max_queue_size,
-    max_download_size_kbs: this?.options?.max_download_size_kbs,
-    min_ratio: this?.options?.min_ratio,
-    min_seeds: this?.options?.min_seeds,
-    max_download_age_mins: this?.options?.max_download_age_mins,
-    download_path: this?.options?.download_path,
-    remove_delay_secs: this?.options?.remove_delay_secs,
-  });
+  private torrentController: TorrentController;
 
   private isSearching = false;
 
-  constructor(private options?: Options) {}
+  constructor(private options?: Options) {
+    this.torrentController = new TorrentController({
+      download_speed_limit_kbs: this?.options?.download_speed_limit_kbs,
+      upload_speed_limit_kbs: this?.options?.upload_speed_limit_kbs,
+      max_queue_size: this?.options?.max_queue_size,
+      max_download_size_kbs: this?.options?.max_download_size_kbs,
+      min_ratio: this?.options?.min_ratio,
+      min_seeds: this?.options?.min_seeds,
+      max_download_age_mins: this?.options?.max_download_age_mins,
+      download_path: this?.options?.download_path,
+      remove_delay_secs: this?.options?.remove_delay_secs,
+    });
+
+    this.scrappers = [
+      new TorrentScrapper("1337x", config1337x, {
+        search_limit: this?.options?.search_limit,
+      }),
+    ];
+
+    this.bot = new TelegramBot(process.env.BOT_TOKEN ?? "", {
+      baseApiUrl: process.env.BOT_API_URL,
+    });
+  }
 
   public addEvents() {
     this.setOnMessageAction("(.+)", "");
@@ -271,12 +276,12 @@ export default class TorrentBot {
     torrent.files.forEach(async (file) => {
       if (file.name.endsWith(".mp4") || file.name.endsWith(".mkv") || file.name.endsWith(".avi")) {
         await this.bot.sendChatAction(chatId, "upload_video");
-        const buffer = await fs.readFile(`${this?.options?.download_path ?? "./downloads"}/${file.path}`);
-        await this.bot.sendVideo(chatId, buffer, {
-          caption: file.name.endsWith(".mkv")
-            ? "Alerta: los archivos mkv no son compatibles con la vista previa de telegram, para verlo tienes que reproducirlo en otra apicación"
-            : undefined,
-        });
+        await this.bot.sendVideo(
+          chatId,
+          new URL(`${this?.options?.download_path ?? "./downloads"}/${file.path}`, import.meta.url).toString(),
+          // @ts-ignore
+          { caption: file.name, supports_streaming: true }
+        );
       }
     });
   }

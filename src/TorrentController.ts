@@ -89,7 +89,10 @@ export default class TorrentController {
       const download: WebtorrentDownload | undefined = this.torrentClient.torrents.find(
         (d: WebtorrentDownload) => d.infoHash === downloadAdditional?.infoHash
       );
-      if (!downloadAdditional || !download) return;
+      if (!downloadAdditional || !download) {
+        clearInterval(intervalId);
+        return;
+      }
       const minutesElapsed = (dayjs().unix() - dayjs(downloadAdditional.created).unix()) / 60;
       if (minutesElapsed > (this?.options?.max_download_age_mins ?? 90)) {
         this.removeTorrent(magnetBrowser);

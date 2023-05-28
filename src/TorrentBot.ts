@@ -282,7 +282,15 @@ export default class TorrentBot {
       } else if (file.name.endsWith(".avi") || file.name.endsWith(".mkv")) {
         await this.bot.sendChatAction(chatId, "upload_video");
         const buffer = await fs.readFile(`./${this?.options?.download_folder ?? "downloads"}/${file.path}`);
-        await this.bot.sendDocument(chatId, buffer, { caption: file.name }, { filename: file.name });
+        await this.bot.sendDocument(
+          chatId,
+          buffer,
+          { caption: file.name },
+          {
+            filename: file.name,
+            contentType: `video/${file.name.endsWith(".avi") ? "x-msvideo" : "x-matroska"}`,
+          }
+        );
       }
     });
   }

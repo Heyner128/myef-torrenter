@@ -278,7 +278,8 @@ export default class TorrentBot {
         await this.bot.sendChatAction(chatId, "upload_video");
         await this.bot.sendVideo(
           chatId,
-          file.arrayBuffer(),
+          // @ts-ignore
+          file.createReadStream(),
           // @ts-ignore
           { caption: file.name, supports_streaming: true }
         );

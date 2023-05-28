@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import type { Message, SendMessageOptions, Update } from "node-telegram-bot-api";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import * as fs from "fs/promises";
 import logger from "./logger.js";
 import TorrentScrapper from "./TorrentScrapper.js";
 import type { TorrentInfo, TorrentScrapperOptions } from "./TorrentScrapper.js";
@@ -276,10 +277,10 @@ export default class TorrentBot {
     torrent.files.forEach(async (file) => {
       if (file.name.endsWith(".mp4") || file.name.endsWith(".mkv") || file.name.endsWith(".avi")) {
         await this.bot.sendChatAction(chatId, "upload_video");
+        const buffer = await fs.readFile(file.path);
         await this.bot.sendVideo(
           chatId,
-          // @ts-ignore
-          file.createReadStream(),
+          buffer,
           // @ts-ignore
           { caption: file.name, supports_streaming: true }
         );

@@ -1,14 +1,18 @@
 import puppeteer, { Browser } from "puppeteer";
 import { Worker } from "snowflake-uuid";
 
-type torrentSelectors = {
+export type TorrentScrapperOptions = {
+  search_limit?: number;
+};
+
+type TorrentSelectors = {
   titles_selector: string;
   seeds_selector: string;
   leeches_selector: string;
   sizes_selector: string;
 };
 
-export type torrentInfo = {
+export type TorrentInfo = {
   id: string;
   title: string;
   seeds: number;
@@ -19,9 +23,9 @@ export type torrentInfo = {
   category: string | undefined;
 };
 
-export type siteConfig = {
+export type SiteConfig = {
   search_url: string;
-  list_selectors: torrentSelectors;
+  list_selectors: TorrentSelectors;
   magnet_selector: string;
   category_selector: string;
   allowed_categories: string[];
@@ -57,13 +61,15 @@ export default class TorrentScrapper {
   private browser: Browser | undefined;
 
   // eslint-disable-next-line no-useless-constructor
-  constructor(private site: siteConfig) {}
+  constructor(public name: string, private site: SiteConfig, private options?: TorrentScrapperOptions) {}
 
   async init() {
-    this.browser = await puppeteer.launch();
+    this.browser = await puppeteer.launch({
+      headless: "new",
+    });
   }
 
-  async search(search: string): Promise<Promise<torrentInfo | undefined>[]> {
+  async search(search: string): Promise<Promise<TorrentInfo | null>[]> {
     const page = await this.browser?.newPage();
     await page?.goto(encodeURI(this.site.search_url.replace("%s", search)));
     const titles = await page?.$$eval(this.site.list_selectors.titles_selector, (el) =>
@@ -82,7 +88,7 @@ export default class TorrentScrapper {
       (el as HTMLLinkElement[]).map((e) => e.href)
     );
     if (titles && seeds && leeches && sizes && links) {
-      return titles.slice(0, Number(process.env.SEARCH_LIMIT) ?? 3).map(async (_el: any, index: number) => {
+      return titles.slice(0, this?.options?.search_limit ?? 5).map(async (_el: string, index: number) => {
         const { magnet, category } = await this.getAdditionalInformation(links[index]);
         if (category && this.site.allowed_categories.includes(category.toLowerCase())) {
           return {
@@ -96,6 +102,7 @@ export default class TorrentScrapper {
             category,
           };
         }
+        return null;
       });
     }
     throw new Error("No results found");

@@ -1,4 +1,4 @@
-import { siteConfig } from "../TorrentScrapper";
+import { SiteConfig } from "../TorrentScrapper";
 
 export default {
   search_url: "https://1337x.to/sort-search/%s/seeders/desc/1/",
@@ -10,5 +10,5 @@ export default {
   },
   magnet_selector: `a[href^="magnet:?xt=urn:btih:"]`,
   category_selector: ".torrent-detail-page ul.list:nth-child(2) span",
-  allowed_categories: ["movies", "tv", "anime", "xxx"],
-} as siteConfig;
+  allowed_categories: ["movies", "tv", "anime", "music", "documentaries"],
+} as SiteConfig;

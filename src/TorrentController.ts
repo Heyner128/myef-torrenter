@@ -99,7 +99,7 @@ export default class TorrentController {
         logger.info("download finished successfully");
         onDone(sourceChatId, download);
         // this gives time to the status messages to update
-        setTimeout(() => this.removeTorrent(magnetBrowser), (this?.options?.remove_delay_secs ?? 60) * 1000);
+        setTimeout(() => this.removeTorrent.call(this, magnetBrowser), (this?.options?.remove_delay_secs ?? 60) * 1000);
         clearInterval(intervalId);
       }
     }, 500);

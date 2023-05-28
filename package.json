@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "rimraf ./build && tsc",
-    "start": "npm run build && node --loader ts-node/esm  --no-warnings build/index.js",
-    "start:dev": "nodemon --exec ts-node --esm src/index.ts",
+    "start": "npm run build && node build/index.js",
+    "start:dev": "nodemon",
     "lint": "eslint --ext .ts src",
     "lint:fix": "eslint --ext .ts src --fix"
   },

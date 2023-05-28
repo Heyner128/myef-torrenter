@@ -278,7 +278,12 @@ export default class TorrentBot {
       if (file.name.endsWith(".mp4") || file.name.endsWith(".mkv") || file.name.endsWith(".avi")) {
         await this.bot.sendChatAction(chatId, "upload_video");
         const buffer = await fs.readFile(`./${this?.options?.download_folder ?? "downloads"}/${file.path}`);
-        await this.bot.sendDocument(chatId, buffer);
+        await this.bot.sendVideo(
+          chatId,
+          buffer,
+          // @ts-ignore
+          { caption: file.name, supports_streaming: true }
+        );
       }
     });
   }

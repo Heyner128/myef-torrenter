@@ -44,13 +44,27 @@ export default class TorrentBot {
     baseApiUrl: process.env.BOT_API_URL,
   });
 
-  private scrappers: TorrentScrapper[] = [new TorrentScrapper("1337x", config1337x)];
+  private scrappers: TorrentScrapper[] = [
+    new TorrentScrapper("1337x", config1337x, {
+      search_limit: this?.options?.search_limit,
+    }),
+  ];
 
   private searchHistory: TorrentInfo[] = [];
 
   private informationMessages: NodeJS.Timer[] = [];
 
-  private torrentController = new TorrentController();
+  private torrentController = new TorrentController({
+    download_speed_limit_kbs: this?.options?.download_speed_limit_kbs,
+    upload_speed_limit_kbs: this?.options?.upload_speed_limit_kbs,
+    max_queue_size: this?.options?.max_queue_size,
+    max_download_size_kbs: this?.options?.max_download_size_kbs,
+    min_ratio: this?.options?.min_ratio,
+    min_seeds: this?.options?.min_seeds,
+    max_download_age_mins: this?.options?.max_download_age_mins,
+    download_path: this?.options?.download_path,
+    remove_delay_secs: this?.options?.remove_delay_secs,
+  });
 
   private isSearching = false;
 

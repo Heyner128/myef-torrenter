@@ -1,4 +1,5 @@
 import winston from "winston";
+import path from "path";
 
 const logger = winston.createLogger({
   level: "info",
@@ -7,17 +8,20 @@ const logger = winston.createLogger({
   exitOnError: false,
   transports: [
     new winston.transports.File({
-      filename: "./logs/error.log",
+      filename: path.join(__dirname, "logs", "error.log"),
       level: "error",
       handleExceptions: true,
+      handleRejections: true,
     }),
     new winston.transports.File({
-      filename: "./logs/combined.log",
+      filename: path.join(__dirname, "logs", "combined.log"),
       handleExceptions: true,
+      handleRejections: true,
     }),
     new winston.transports.Console({
       format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
       handleExceptions: true,
+      handleRejections: true,
     }),
   ],
 });

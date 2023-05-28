@@ -1,6 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import type { Message, SendMessageOptions, Update } from "node-telegram-bot-api";
-import * as fs from "fs";
+import * as fs from "fs/promises";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import logger from "./logger.js";
 import TorrentScrapper from "./TorrentScrapper.js";
@@ -256,9 +256,13 @@ export default class TorrentBot {
   private sendVideo(chatId: number, torrent: WebtorrentDownload) {
     torrent.files.forEach(async (file) => {
       if (file.name.endsWith(".mp4") || file.name.endsWith(".mkv") || file.name.endsWith(".avi")) {
-        const buffer = fs.readFileSync(`${this?.options?.download_path ?? "./downloads"}/${file.path}`);
+        const buffer = await fs.readFile(`${this?.options?.download_path ?? "./downloads"}/${file.path}`);
         await this.bot.sendChatAction(chatId, "upload_video");
-        await this.bot.sendVideo(chatId, buffer);
+        await this.bot.sendVideo(chatId, buffer, {
+          caption: file.name.endsWith(".mkv")
+            ? "Alerta: los archivos mkv no son compatibles con la vista previa de telegram, para verlo tienes que reproducirlo en otr apicación"
+            : undefined,
+        });
       }
     });
   }

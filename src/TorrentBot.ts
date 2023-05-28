@@ -270,7 +270,7 @@ export default class TorrentBot {
   private async onBotMembershipUpdate(chatMemberUpdate: TelegramBot.ChatMemberUpdated) {
     const newStatus = chatMemberUpdate.new_chat_member.status;
     if (newStatus === "member") {
-      const message = `Hola soy juliozorra pirata, envia 'juliozorra commandos' para ver los commandos disponibles \n\n Motores disponibles: ${this.scrappers.reduce(
+      const message = `Hola soy juliozorra pirata, envia 'juliozorra comandos' para ver los commandos disponibles \n\n Motores disponibles: ${this.scrappers.reduce(
         (acc, scrapper) => `${acc}\n${scrapper.name}`,
         ""
       )}`;

@@ -210,7 +210,7 @@ export default class TorrentBot {
       );
       await this.torrentController.downloadWatcher(
         chatId,
-        torrent.magnetURI,
+        torrent.infoHash,
         (sourceChatId: number, download: WebtorrentDownload) => {
           this.sendVideo(sourceChatId, download);
         }

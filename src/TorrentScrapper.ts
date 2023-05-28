@@ -65,7 +65,7 @@ export default class TorrentScrapper {
 
   async init() {
     this.browser = await puppeteer.launch({
-      headless: true,
+      headless: "new",
     });
   }
 

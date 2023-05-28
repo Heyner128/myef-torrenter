@@ -169,6 +169,7 @@ export default class TorrentBot {
       };
     } catch (err) {
       logger.error(err);
+      this.isSearching = false;
       return { message: `Error de busqueda` };
     }
   }

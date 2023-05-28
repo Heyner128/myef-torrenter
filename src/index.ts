@@ -5,7 +5,9 @@ import logger from "./logger.js";
 
 dotenv.config();
 
-const bot = new TorrentBot();
+const bot = new TorrentBot({
+  download_speed_limit_kbs: 62500,
+});
 
 try {
   bot.addEvents();

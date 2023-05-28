@@ -18,8 +18,8 @@ type MessageWithOptions = {
 export type TorrentBotOptions = {
   max_search_history_size?: number;
   welcome_message_interval_mins?: number;
-  max_download_information_messages: number;
-  download_info_messages_interval_secs: number;
+  max_download_information_messages?: number;
+  download_info_messages_interval_secs?: number;
 };
 
 type Options = TorrentScrapperOptions & TorrentControllerOptions & TorrentBotOptions;

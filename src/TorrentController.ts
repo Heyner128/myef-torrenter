@@ -5,15 +5,15 @@ import logger from "./logger.js";
 import type { TorrentInfo } from "./TorrentScrapper.js";
 
 export type TorrentControllerOptions = {
-  download_speed_limit: number;
-  upload_speed_limit: number;
-  max_queue_size: number;
-  max_download_size_kbs: number;
-  min_ratio: number;
-  min_seeds: number;
-  max_download_age_mins: number;
-  download_path: string;
-  remove_delay_secs: number;
+  download_speed_limit_kbs?: number;
+  upload_speed_limit_kbs?: number;
+  max_queue_size?: number;
+  max_download_size_kbs?: number;
+  min_ratio?: number;
+  min_seeds?: number;
+  max_download_age_mins?: number;
+  download_path?: string;
+  remove_delay_secs?: number;
 };
 
 export type WebtorrentFile = {
@@ -50,8 +50,8 @@ export default class TorrentController {
   }
 
   private torrentClient: TorrentClient = new TorrentClient({
-    downloadLimit: (this?.options?.download_speed_limit ?? 700) * 1024,
-    uploadLimit: (this?.options?.upload_speed_limit ?? 50) * 1024,
+    downloadLimit: (this?.options?.download_speed_limit_kbs ?? 700) * 1024,
+    uploadLimit: (this?.options?.upload_speed_limit_kbs ?? 50) * 1024,
   });
 
   private downloadQueue: Download[] = [];

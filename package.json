@@ -22,6 +22,7 @@
     "eslint": "^8.33.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.6.0",
+    "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-prettier": "^4.2.1",
@@ -33,6 +34,7 @@
   },
   "dependencies": {
     "@fastify/type-provider-typebox": "^3.2.0",
+    "@tsconfig/esm": "^1.0.3",
     "dayjs": "^1.11.7",
     "dotenv": "^16.0.3",
     "fastify": "^4.17.0",

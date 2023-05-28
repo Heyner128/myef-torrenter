@@ -1,11 +1,14 @@
-import TelegramBot, { Message, SendMessageOptions, Update } from "node-telegram-bot-api";
+import TelegramBot from "node-telegram-bot-api";
+import type { Message, SendMessageOptions, Update } from "node-telegram-bot-api";
 import * as fs from "fs";
-import { FastifyReply, FastifyRequest } from "fastify";
-import logger from "./logger";
-import TorrentScrapper, { TorrentInfo, TorrentScrapperOptions } from "./TorrentScrapper";
-import config1337x from "./sites/1337x";
-import TorrentController, { WebtorrentDownload, TorrentControllerOptions } from "./TorrentController";
-import fastify from "./webhook";
+import type { FastifyReply, FastifyRequest } from "fastify";
+import logger from "./logger.js";
+import TorrentScrapper from "./TorrentScrapper.js";
+import type { TorrentInfo, TorrentScrapperOptions } from "./TorrentScrapper.js";
+import config1337x from "./sites/1337x.js";
+import TorrentController from "./TorrentController.js";
+import type { WebtorrentDownload, TorrentControllerOptions } from "./TorrentController.js";
+import fastify from "./webhook.js";
 
 type MessageWithOptions = {
   message: string;

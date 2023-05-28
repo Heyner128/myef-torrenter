@@ -1,7 +1,6 @@
 {
     "env": {
-        "browser": true,
-        "es2021": true,
+        "es2022": true,
         "node": true
     },
     "extends": [
@@ -25,12 +24,13 @@
             "@typescript-eslint/parser": [".ts", ".tsx"]
         },
         "import/resolver": {
-            "node": {
+            "typescript": {
                 "extensions": [".js", ".jsx", ".ts", ".tsx"]
             }
         }
     },
     "plugins": [
+        "import",
         "@typescript-eslint",
         "prettier"
     ],

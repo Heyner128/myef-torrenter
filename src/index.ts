@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
-import TorrentBot from "./TorrentBot";
+import TorrentBot from "./TorrentBot.js";
 
-import logger from "./logger";
+import logger from "./logger.js";
 
 dotenv.config();
 

@@ -1,9 +1,8 @@
 import dayjs from "dayjs";
 // @ts-ignore
 import TorrentClient from "webtorrent";
-import logger from "./logger";
-// @ts-ignore
-import { TorrentInfo } from "./TorrentScrapper";
+import logger from "./logger.js";
+import type { TorrentInfo } from "./TorrentScrapper.js";
 
 export type TorrentControllerOptions = {
   download_speed_limit: number;

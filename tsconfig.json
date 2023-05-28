@@ -1,21 +1,13 @@
 {
+  "extends": "@tsconfig/esm/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "lib": ["ES2022" , "DOM"],
-    "allowJs": true,
+    "module": "es2022",
+    "moduleResolution": "nodenext",
+    "target": "es2022",
     "outDir": "build",
     "rootDir": "src",
-    "strict": true,
-    "noImplicitAny": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true
+    "strict": true
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
   "exclude" : ["node_modules"],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  }
 }

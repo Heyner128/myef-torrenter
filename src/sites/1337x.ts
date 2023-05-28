@@ -1,4 +1,4 @@
-import { SiteConfig } from "../TorrentScrapper";
+import type { SiteConfig } from "../TorrentScrapper.js";
 
 export default {
   search_url: "https://1337x.to/sort-search/%s/seeders/desc/1/",

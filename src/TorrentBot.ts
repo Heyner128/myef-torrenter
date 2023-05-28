@@ -60,7 +60,7 @@ export default class TorrentBot {
       min_ratio: this?.options?.min_ratio,
       min_seeds: this?.options?.min_seeds,
       max_download_age_mins: this?.options?.max_download_age_mins,
-      download_path: this?.options?.download_path,
+      download_folder: this?.options?.download_folder,
       remove_delay_secs: this?.options?.remove_delay_secs,
     });
 
@@ -278,7 +278,10 @@ export default class TorrentBot {
         await this.bot.sendChatAction(chatId, "upload_video");
         await this.bot.sendVideo(
           chatId,
-          new URL(`..(${this?.options?.download_path ?? "/downloads"}/${file.path}`, import.meta.url).toString(),
+          new URL(
+            `${this?.options?.download_folder ?? "downloads"}/${file.path}`,
+            import.meta.url.replace("/build/", "")
+          ).toString(),
           // @ts-ignore
           { caption: file.name, supports_streaming: true }
         );

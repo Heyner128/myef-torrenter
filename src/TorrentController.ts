@@ -12,7 +12,7 @@ export type TorrentControllerOptions = {
   min_ratio?: number;
   min_seeds?: number;
   max_download_age_mins?: number;
-  download_path?: string;
+  download_folder?: string;
   remove_delay_secs?: number;
 };
 
@@ -124,7 +124,7 @@ export default class TorrentController {
         this.torrentClient.add(
           magnetBrowser,
           {
-            path: this?.options?.download_path ?? "./downloads",
+            path: this?.options?.download_folder ?? "./downloads",
             destroyStoreOnDestroy: true,
           },
           (torrent: WebtorrentDownload) => {

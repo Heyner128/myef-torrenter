@@ -1,28 +1,32 @@
-import winston from "winston";
+import pino from "pino";
 
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.simple(),
-  defaultMeta: { service: "torrent-bot" },
-  exitOnError: false,
-  transports: [
-    new winston.transports.File({
-      filename: "./logs/error.log",
-      level: "error",
-      handleExceptions: true,
-      handleRejections: true,
-    }),
-    new winston.transports.File({
-      filename: "./logs/combined.log",
-      handleExceptions: true,
-      handleRejections: true,
-    }),
-    new winston.transports.Console({
-      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
-      handleExceptions: true,
-      handleRejections: true,
-    }),
-  ],
+const logger = pino({
+  transport: {
+    targets: [
+      {
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+        },
+        level: "info",
+      },
+      {
+        target: "pino/file",
+        level: "error",
+        options: {
+          destination: "./logs/error.log",
+          mkdir: true,
+        },
+      },
+      {
+        target: "pino/file",
+        level: "info",
+        options: {
+          destination: "./logs/info.log",
+          mkdir: true,
+        },
+      },
+    ],
+  },
 });
-
 export default logger;

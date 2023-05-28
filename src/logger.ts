@@ -10,17 +10,14 @@ const logger = winston.createLogger({
       filename: "logs/error.log",
       level: "error",
       handleExceptions: true,
-      handleRejections: true,
     }),
     new winston.transports.File({
       filename: "logs/combined.log",
       handleExceptions: true,
-      handleRejections: true,
     }),
     new winston.transports.Console({
       format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
       handleExceptions: true,
-      handleRejections: true,
     }),
   ],
 });

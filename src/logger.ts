@@ -17,12 +17,15 @@ const logger = winston.createLogger({
       handleExceptions: true,
       handleRejections: true,
     }),
-    new winston.transports.Console({
-      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
-      handleExceptions: true,
-      handleRejections: true,
-    }),
   ],
 });
+
+if (process.env.NODE_ENV !== "production") {
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.combine(winston.format.colorize({ all: true }), winston.format.simple()),
+    })
+  );
+}
 
 export default logger;

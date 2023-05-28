@@ -81,13 +81,13 @@ export default class TorrentController {
 
   public async downloadWatcher(
     sourceChatId: number,
-    magnetBrowser: string,
+    infoHash: string,
     onDone: (chatId: number, download: WebtorrentDownload) => void
   ) {
     const intervalId = setInterval(() => {
-      const downloadAdditional = this.downloadQueue.find((d) => d.magnetBrowser === magnetBrowser);
+      const downloadAdditional = this.downloadQueue.find((d) => d.infoHash === infoHash);
       const download: WebtorrentDownload | undefined = this.torrentClient.torrents.find(
-        (d: WebtorrentDownload) => d.infoHash === downloadAdditional?.infoHash
+        (d: WebtorrentDownload) => d.infoHash === infoHash
       );
       if (!downloadAdditional || !download) {
         clearInterval(intervalId);
@@ -95,14 +95,14 @@ export default class TorrentController {
       }
       const minutesElapsed = (dayjs().unix() - dayjs(downloadAdditional.created).unix()) / 60;
       if (minutesElapsed > (this?.options?.max_download_age_mins ?? 90)) {
-        this.removeTorrent(magnetBrowser);
+        this.removeTorrent(infoHash);
         clearInterval(intervalId);
       }
       if (download.done) {
         logger.info("download finished successfully");
         onDone(sourceChatId, download);
         // this gives time to the status messages to update
-        setTimeout(() => this.removeTorrent.call(this, magnetBrowser), (this?.options?.remove_delay_secs ?? 60) * 1000);
+        setTimeout(() => this.removeTorrent.call(this, infoHash), (this?.options?.remove_delay_secs ?? 60) * 1000);
         clearInterval(intervalId);
       }
     }, 500);
@@ -141,13 +141,10 @@ export default class TorrentController {
     });
   }
 
-  private removeTorrent(magnetBrowser: string) {
-    const torrent = this.torrentClient.torrents.find(
-      (t: WebtorrentDownload) =>
-        t.infoHash === this.downloadQueue.find((d) => d.magnetBrowser === magnetBrowser)?.infoHash
-    );
+  private removeTorrent(infoHash: string) {
+    const torrent = this.torrentClient.torrents.find((t: WebtorrentDownload) => t.infoHash === infoHash);
     if (!torrent) throw new Error("No se encontro la descarga");
     torrent.destroy();
-    this.downloadQueue = this.downloadQueue.filter((d) => d.magnetBrowser !== magnetBrowser);
+    this.downloadQueue = this.downloadQueue.filter((d) => d.infoHash !== infoHash);
   }
 }

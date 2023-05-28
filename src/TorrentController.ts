@@ -50,7 +50,7 @@ export default class TorrentController {
   }
 
   private torrentClient: TorrentClient = new TorrentClient({
-    downloadLimit: (this?.options?.download_speed_limit_kbs ?? 700) * 1024,
+    downloadLimit: (this?.options?.download_speed_limit_kbs ?? 62500) * 1024,
     uploadLimit: (this?.options?.upload_speed_limit_kbs ?? 50) * 1024,
   });
 

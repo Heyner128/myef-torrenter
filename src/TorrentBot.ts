@@ -278,10 +278,7 @@ export default class TorrentBot {
         await this.bot.sendChatAction(chatId, "upload_video");
         await this.bot.sendVideo(
           chatId,
-          new URL(
-            `./${this?.options?.download_folder ?? "downloads"}/${file.path}`,
-            import.meta.url.replace("/build/", "")
-          ).toString(),
+          file.arrayBuffer(),
           // @ts-ignore
           { caption: file.name, supports_streaming: true }
         );

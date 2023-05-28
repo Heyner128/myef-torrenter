@@ -84,7 +84,7 @@ export default class TorrentController {
     magnetBrowser: string,
     onDone: (chatId: number, download: WebtorrentDownload) => void
   ) {
-    const intervalId = setInterval(async () => {
+    const intervalId = setInterval(() => {
       const downloadAdditional = this.downloadQueue.find((d) => d.magnetBrowser === magnetBrowser);
       const download: WebtorrentDownload | undefined = this.torrentClient.torrents.find(
         (d: WebtorrentDownload) => d.infoHash === downloadAdditional?.infoHash

@@ -263,7 +263,7 @@ export default class TorrentBot {
           message_id: messageSent.message_id,
         });
         downloadInfo = currentDownloadInfo;
-      }, (this?.options?.download_info_messages_interval_secs ?? 30) * 1000);
+      }, (this?.options?.download_info_messages_interval_secs ?? 120) * 1000);
       if (this.informationMessages.length < (this?.options?.max_download_information_messages ?? 5))
         this.informationMessages.push(intervalId);
       logger.info("Download info sent");

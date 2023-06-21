@@ -106,7 +106,7 @@ export default class TorrentController {
         setTimeout(() => this.removeTorrent.call(this, infoHash), (this?.options?.remove_delay_secs ?? 60) * 1000);
         clearInterval(intervalId);
       }
-    }, 500);
+    }, 2000);
   }
 
   public getTorrent(torrentId: string): WebtorrentDownload | undefined {

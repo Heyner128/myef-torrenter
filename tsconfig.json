@@ -10,7 +10,7 @@
     "esModuleInterop": true
   },
   "include": ["src/**/*.ts", "tests/**/*.ts", "eslint.config.mjs",
-    "ecosystem.config.js"
+    "ecosystem.config.cjs"
   ],
   "exclude" : ["node_modules"]
 }

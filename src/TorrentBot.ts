@@ -57,7 +57,7 @@ export default class TorrentBot {
       download_speed_limit_kbs: this?.options?.download_speed_limit_kbs,
       upload_speed_limit_kbs: this?.options?.upload_speed_limit_kbs,
       max_queue_size: this?.options?.max_queue_size,
-      max_download_size_kbs: this?.options?.max_download_size_kbs,
+      max_download_size_kb: this?.options?.max_download_size_kb,
       min_ratio: this?.options?.min_ratio,
       min_seeds: this?.options?.min_seeds,
       max_download_age_mins: this?.options?.max_download_age_mins,
@@ -71,16 +71,14 @@ export default class TorrentBot {
       }),
     ];
 
-    this.bot = new TelegramBot(process.env.BOT_TOKEN ?? "", {
-      baseApiUrl: process.env.BOT_API_URL,
-    });
+    this.bot = new TelegramBot(process.env.BOT_TOKEN ?? "");
   }
 
   public addEvents() {
     this.setOnMessageAction("(.+)", "");
     this.setOnMessageAction(
       "juliozorra comandos",
-      `Comandos disponibles:\n\n - juliozorra piratea <nombre de la película o serie>\n\n - juliozorra muéstrame las descargas`
+      `Comandos disponibles:\n\n - juliozorra piratea <nombre de la película o serie>\n\n - juliozorra muéstrame las descargas`,
     );
     this.setOnMessageAction("juliozorra piratea (.+)", this.searchTorrent.bind(this));
     this.setOnMessageAction("juliozorra mué?e?strame las descargas", this.getDownloadsList.bind(this));
@@ -105,13 +103,13 @@ export default class TorrentBot {
         this.bot.processUpdate(request.body as Update);
         reply.send(200);
       });
-      await fastify.listen({ port: Number(process.env.PORT) ?? 3000 });
+      await fastify.listen({ port: Number(process.env.PORT ?? 3000) });
     }
   }
 
   private setOnMessageAction(
     pattern: string,
-    response: ((match: RegExpExecArray | null, msg?: Message) => Promise<MessageWithOptions | string>) | string
+    response: ((match: RegExpExecArray | null, msg?: Message) => Promise<MessageWithOptions | string>) | string,
   ) {
     this.bot.onText(new RegExp(pattern, "i"), async (msg, match) => {
       if (msg.chat.type === "group" || msg.chat.type === "supergroup") {
@@ -121,7 +119,7 @@ export default class TorrentBot {
         await this.bot.sendMessage(
           msg.chat.id,
           typeof message === "string" ? message : message.message,
-          typeof message === "string" ? undefined : message?.options
+          typeof message === "string" ? undefined : message?.options,
         );
         logger.info(`Message "${typeof message === "string" ? message : message.message}" sent to ${msg.chat.title}`);
       } else {
@@ -130,7 +128,7 @@ export default class TorrentBot {
           msg.chat.id,
           `
             No estoy diseñado para funcionar en chats privados, habla con mi creador para que me agregue a un grupo.
-          `
+          `,
         );
         logger.info(`Private message "${msg.text}" received, answered with error`);
       }
@@ -166,7 +164,7 @@ export default class TorrentBot {
             await scrapper.init();
             const results = await scrapper.search(match?.[1] ?? "");
             return Promise.all(results);
-          })
+          }),
         )
       )
         .flat()
@@ -186,7 +184,7 @@ export default class TorrentBot {
       return {
         message: `Selecciona el archivo que quieras descargar: ${torrents.reduce(
           (acc, torr, index) => `${acc}\n\n${index + 1} - ${cleanTorrentTitle(torr ? torr.title : "")}`,
-          ""
+          "",
         )}`,
         options: stringsToTelegramOptions(torrents.map((torr) => torr?.id ?? "")),
       };
@@ -202,7 +200,7 @@ export default class TorrentBot {
     if (downloads.length === 0) return { message: "No hay descargas en curso" };
     return {
       message: `Selecciona la descarga para ver la informacion: ${downloads.map(
-        (download: WebtorrentDownload) => `\n\n${download.name}`
+        (download: WebtorrentDownload) => `\n\n${download.name}`,
       )}`,
       options: stringsToTelegramOptions(downloads.map((download: WebtorrentDownload) => download.infoHash)),
     };
@@ -212,7 +210,7 @@ export default class TorrentBot {
     const download = this.torrentController.getTorrent(infoHash);
     if (!download) throw new Error("No se encontro la descarga");
     return `Nombre: ${download.name}\nTamaño: ${Math.round(download.length / 1024)} KB\nDescargado: ${Math.round(
-      download.downloaded / 1024
+      download.downloaded / 1024,
     )} KB\nVelocidad: ${Math.round(download.downloadSpeed / 1024)} KB/s\nEstado: ${
       download.done ? "Finalizado" : "En progreso"
     }
@@ -229,14 +227,14 @@ export default class TorrentBot {
       const torrent = await this.torrentController.downloadTorrent(torrentInformations);
       await this.bot.sendMessage(
         chatId,
-        `Descargando ${torrent.name} \n\nEnvia 'juliozorra muestrame las descargas' para ver las descargas en curso`
+        `Descargando ${torrent.name} \n\nEnvia 'juliozorra muestrame las descargas' para ver las descargas en curso`,
       );
       await this.torrentController.downloadWatcher(
         chatId,
         torrent.infoHash,
         (sourceChatId: number, download: WebtorrentDownload) => {
           this.sendVideo(sourceChatId, download);
-        }
+        },
       );
       logger.info("Torrent download started");
     } catch (e) {
@@ -249,21 +247,24 @@ export default class TorrentBot {
     try {
       let downloadInfo = await this.getDownloadInfo(infoHash);
       const messageSent = await this.bot.sendMessage(chatId, downloadInfo);
-      const intervalId = setInterval(async () => {
-        const download = this.torrentController.getTorrent(infoHash);
-        if (!download) {
-          clearInterval(intervalId);
-          this.informationMessages = this.informationMessages.filter((i) => i !== intervalId);
-          return;
-        }
-        const currentDownloadInfo = await this.getDownloadInfo(infoHash);
-        if (downloadInfo === currentDownloadInfo || !this.informationMessages.includes(intervalId)) return;
-        await this.bot.editMessageText(currentDownloadInfo, {
-          chat_id: messageSent.chat.id,
-          message_id: messageSent.message_id,
-        });
-        downloadInfo = currentDownloadInfo;
-      }, (this?.options?.download_info_messages_interval_secs ?? 120) * 1000);
+      const intervalId = setInterval(
+        async () => {
+          const download = this.torrentController.getTorrent(infoHash);
+          if (!download) {
+            clearInterval(intervalId);
+            this.informationMessages = this.informationMessages.filter((i) => i !== intervalId);
+            return;
+          }
+          const currentDownloadInfo = await this.getDownloadInfo(infoHash);
+          if (downloadInfo === currentDownloadInfo || !this.informationMessages.includes(intervalId)) return;
+          await this.bot.editMessageText(currentDownloadInfo, {
+            chat_id: messageSent.chat.id,
+            message_id: messageSent.message_id,
+          });
+          downloadInfo = currentDownloadInfo;
+        },
+        (this?.options?.download_info_messages_interval_secs ?? 120) * 1000,
+      );
       if (this.informationMessages.length < (this?.options?.max_download_information_messages ?? 5))
         this.informationMessages.push(intervalId);
       logger.info("Download info sent");
@@ -289,7 +290,7 @@ export default class TorrentBot {
           {
             filename: file.name,
             contentType: `video/${file.name.endsWith(".avi") ? "x-msvideo" : "x-matroska"}`,
-          }
+          },
         );
       }
     });
@@ -300,15 +301,18 @@ export default class TorrentBot {
     if (newStatus === "member") {
       const message = `Hola soy juliozorra pirata, envia 'juliozorra comandos' para ver los commandos disponibles \n\n Motores disponibles: ${this.scrappers.reduce(
         (acc, scrapper) => `${acc}\n${scrapper.name}`,
-        ""
+        "",
       )}`;
       const interval = this?.options?.welcome_message_interval_mins ?? 120;
       // first time
       await this.bot.sendMessage(chatMemberUpdate.chat.id, message);
       // interval
-      setInterval(async () => {
-        await this.bot.sendMessage(chatMemberUpdate.chat.id, message);
-      }, (!Number.isNaN(interval) ? interval : 60) * 60 * 1000);
+      setInterval(
+        async () => {
+          await this.bot.sendMessage(chatMemberUpdate.chat.id, message);
+        },
+        (!Number.isNaN(interval) ? interval : 60) * 60 * 1000,
+      );
     }
   }
 }

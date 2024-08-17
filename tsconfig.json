@@ -1,13 +1,14 @@
 {
   "extends": "@tsconfig/esm/tsconfig.json",
   "compilerOptions": {
-    "module": "es2022",
+    "module": "ESNext",
     "moduleResolution": "nodenext",
     "target": "es2022",
     "outDir": "build",
     "rootDir": "src",
-    "strict": true
+    "strict": true,
+    "esModuleInterop": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"],
-  "exclude" : ["node_modules"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "eslint.config.mjs"],
+  "exclude" : ["node_modules"]
 }

@@ -8,7 +8,7 @@ export type TorrentControllerOptions = {
   download_speed_limit_kbs?: number;
   upload_speed_limit_kbs?: number;
   max_queue_size?: number;
-  max_download_size_kbs?: number;
+  max_download_size_kb?: number;
   min_ratio?: number;
   min_seeds?: number;
   max_download_age_mins?: number;
@@ -66,7 +66,7 @@ export default class TorrentController {
     if (!torrent?.magnet) throw new Error("El enlace al torrent no es valido");
     if (this.torrentClient.torrents.length === (this.options?.max_queue_size ?? 3))
       throw new Error("La cola de descargas esta llena");
-    if (torrent.size_kbs > (this?.options?.max_download_size_kbs ?? 2048000))
+    if (torrent.size_kbs > (this?.options?.max_download_size_kb ?? 2048000))
       throw new Error("El archivo es muy grande");
     if (
       torrent.seeds / torrent.leeches < (this?.options?.min_ratio ?? 5) ||
@@ -76,6 +76,7 @@ export default class TorrentController {
     try {
       return this.addTorrent(torrent.magnet);
     } catch (e) {
+      logger.error(e);
       throw new Error("No se pudo descargar el torrent, probablemente ya este en la lista descargas");
     }
   }
@@ -83,12 +84,12 @@ export default class TorrentController {
   public async downloadWatcher(
     sourceChatId: number,
     infoHash: string,
-    onDone: (chatId: number, download: WebtorrentDownload) => void
+    onDone: (chatId: number, download: WebtorrentDownload) => void,
   ) {
     const intervalId = setInterval(() => {
       const downloadAdditional = this.downloadQueue.find((d) => d.infoHash === infoHash);
       const download: WebtorrentDownload | undefined = this.torrentClient.torrents.find(
-        (d: WebtorrentDownload) => d.infoHash === infoHash
+        (d: WebtorrentDownload) => d.infoHash === infoHash,
       );
       if (!downloadAdditional || !download) {
         clearInterval(intervalId);
@@ -118,7 +119,7 @@ export default class TorrentController {
       try {
         const torrentInClient = this.torrentClient.torrents.find(
           (t: WebtorrentDownload) =>
-            t.infoHash === this.downloadQueue.find((d) => d.magnetBrowser === magnetBrowser)?.infoHash
+            t.infoHash === this.downloadQueue.find((d) => d.magnetBrowser === magnetBrowser)?.infoHash,
         );
         if (torrentInClient) reject(new Error("El torrent ya esta en la lista de descargas"));
         this.torrentClient.add(
@@ -134,7 +135,7 @@ export default class TorrentController {
               created: dayjs().toDate(),
             });
             resolve(torrent);
-          }
+          },
         );
       } catch (e) {
         reject(e);

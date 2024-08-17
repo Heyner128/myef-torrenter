@@ -60,12 +60,15 @@ function sizeParser(size: string) {
 export default class TorrentScrapper {
   private browser: Browser | undefined;
 
-  // eslint-disable-next-line no-useless-constructor
-  constructor(public name: string, private site: SiteConfig, private options?: TorrentScrapperOptions) {}
+  constructor(
+    public name: string,
+    private site: SiteConfig,
+    private options?: TorrentScrapperOptions,
+  ) {}
 
   async init() {
     this.browser = await puppeteer.launch({
-      headless: "new",
+      headless: true,
     });
   }
 
@@ -73,19 +76,19 @@ export default class TorrentScrapper {
     const page = await this.browser?.newPage();
     await page?.goto(encodeURI(this.site.search_url.replace("%s", search)));
     const titles = await page?.$$eval(this.site.list_selectors.titles_selector, (el) =>
-      (el as HTMLElement[]).map((e) => e.innerText)
+      (el as HTMLElement[]).map((e) => e.innerText),
     );
     const seeds = await page?.$$eval(this.site.list_selectors.seeds_selector, (el) =>
-      (el as HTMLElement[]).map((e) => e.innerText)
+      (el as HTMLElement[]).map((e) => e.innerText),
     );
     const leeches = await page?.$$eval(this.site.list_selectors.leeches_selector, (el) =>
-      (el as HTMLElement[]).map((e) => e.innerText)
+      (el as HTMLElement[]).map((e) => e.innerText),
     );
     const sizes = await page?.$$eval(this.site.list_selectors.sizes_selector, (el) =>
-      (el as HTMLElement[]).map((e) => e.innerText)
+      (el as HTMLElement[]).map((e) => e.innerText),
     );
     const links = await page?.$$eval(this.site.list_selectors.titles_selector, (el) =>
-      (el as HTMLLinkElement[]).map((e) => e.href)
+      (el as HTMLLinkElement[]).map((e) => e.href),
     );
     if (titles && seeds && leeches && sizes && links) {
       return titles.slice(0, this?.options?.search_limit ?? 5).map(async (_el: string, index: number) => {
